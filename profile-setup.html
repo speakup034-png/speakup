@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up your profile — SpeakUp</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="card auth-card" style="max-width:420px;">
+    <h1>Create your profile</h1>
+    <p>This is what other users will see. Never your phone number or exact location.</p>
+    <input type="text" id="displayName" placeholder="Display name">
+    <input type="text" id="dob" placeholder="Date of birth (YYYY-MM-DD)">
+    <input type="text" id="gender" placeholder="Gender (optional)">
+    <input type="text" id="country" placeholder="Country">
+    <input type="text" id="language" placeholder="Language">
+    <input type="text" id="interests" placeholder="Interests, comma separated">
+    <div class="error-text" id="setup-error" style="display:none;"></div>
+    <button class="btn btn-primary btn-block" id="save-profile-btn">Continue</button>
+  </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+requireLogin();
+document.getElementById('save-profile-btn').addEventListener('click', async () => {
+  const errorEl = document.getElementById('setup-error');
+  errorEl.style.display = 'none';
+  try {
+    await api('/profile', { method: 'POST', body: {
+      displayName: document.getElementById('displayName').value,
+      dateOfBirth: document.getElementById('dob').value,
+      gender: document.getElementById('gender').value,
+      country: document.getElementById('country').value,
+      language: document.getElementById('language').value,
+      interests: document.getElementById('interests').value.split(',').map(s => s.trim()).filter(Boolean),
+    }});
+    window.location.href = '/home.html';
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finding someone — SpeakUp</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="match-screen" id="waiting-view">
+  <div class="pulse"></div>
+  <h2>Finding someone for you...</h2>
+  <p style="color:#5A6B8C;">Hang tight, this usually takes a few seconds.</p>
+  <button class="btn btn-secondary" id="cancel-btn" style="margin-top:24px;">Cancel</button>
+</div>
+
+<div class="match-screen" id="found-view" style="display:none;">
+  <div class="card match-found-card">
+    <img id="found-photo" src="/assets/logo.png" alt="Profile">
+    <h3 id="found-name">Someone new</h3>
+    <p id="found-meta" style="color:#5A6B8C;">Language · Interests</p>
+    <div style="display:flex; gap:12px; margin-top:16px;">
+      <button class="btn btn-secondary btn-block" id="skip-btn">Skip</button>
+      <button class="btn btn-primary btn-block" id="accept-btn">Accept Call</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
+<script>
+requireLogin();
+const callType = new URLSearchParams(window.location.search).get('type') || 'video';
+const socket = connectSocket();
+let matchData = null;
+
+socket.on('connect', () => socket.emit('match_request', { callType, preferences: {} }));
+
+socket.on('match_waiting', () => {
+  document.getElementById('waiting-view').style.display = 'flex';
+  document.getElementById('found-view').style.display = 'none';
+});
+
+socket.on('match_found', (data) => {
+  matchData = data;
+  document.getElementById('waiting-view').style.display = 'none';
+  document.getElementById('found-view').style.display = 'flex';
+});
+
+socket.on('match_error', (err) => {
+  showToast(err.message || 'Could not find a match right now.');
+  if (err.code === 'DAILY_LIMIT_REACHED') window.location.href = '/premium.html';
+});
+
+document.getElementById('cancel-btn').addEventListener('click', () => {
+  socket.emit('match_cancel');
+  window.location.href = '/home.html';
+});
+
+document.getElementById('skip-btn').addEventListener('click', () => {
+  socket.emit('match_request', { callType, preferences: {} }); // re-queue for a new partner
+  document.getElementById('waiting-view').style.display = 'flex';
+  document.getElementById('found-view').style.display = 'none';
+});
+
+document.getElementById('accept-btn').addEventListener('click', () => {
+  sessionStorage.setItem('speakup_match', JSON.stringify(matchData));
+  window.location.href = callType === 'voice' ? '/call-voice.html' : '/call-video.html';
+});
+</script>
+</body>
+</html>

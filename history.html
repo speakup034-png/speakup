@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Call History — SpeakUp</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="navbar">
+  <a href="/" class="logo"><img src="/assets/logo.png" alt="SpeakUp"> SpeakUp</a>
+  <nav><a href="/home.html">Home</a></nav>
+</header>
+<section class="section" style="max-width:720px; margin:0 auto;">
+  <h2>Call History</h2>
+  
+<div class="card"><p id="history-list">Loading…</p></div>
+<script src="/js/api.js"></script>
+<script>
+requireLogin();
+api("/calls/history").then(rows => {
+  document.getElementById("history-list").innerHTML = rows.length
+    ? rows.map(r => `<div style="padding:8px 0;border-bottom:1px solid #EEF3FB;">${r.call_type} · ${new Date(r.started_at).toLocaleString()} · ${r.duration || 0}s · ${r.end_reason}</div>`).join("")
+    : "No calls yet.";
+});
+</script>
+</section>
+</body>
+</html>

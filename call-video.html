@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Call — SpeakUp</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="call-screen">
+  <div class="remote-video"><video id="remoteVideo" autoplay playsinline></video></div>
+  <div class="local-video"><video id="localVideo" autoplay playsinline muted></video></div>
+
+  <div class="call-top-bar">
+    <span id="call-status" style="background:rgba(0,0,0,.4); padding:6px 12px; border-radius:999px; font-size:13px;">Connecting…</span>
+    <span id="call-duration" style="background:rgba(0,0,0,.4); padding:6px 12px; border-radius:999px; font-size:13px;">00:00</span>
+  </div>
+
+  <div class="call-controls">
+    <button class="control-btn" id="mute-btn" title="Mute">🎤</button>
+    <button class="control-btn" id="camera-btn" title="Camera">📷</button>
+    <button class="control-btn" id="speaker-btn" title="Speaker">🔊</button>
+    <button class="control-btn" id="next-btn" title="Next">⏭️</button>
+    <button class="control-btn danger" id="end-btn" title="End Call">📵</button>
+    <button class="control-btn" id="report-btn" title="Report">⚠️</button>
+    <button class="control-btn" id="block-btn" title="Block">🚫</button>
+  </div>
+</div>
+
+<!-- End-call confirmation -->
+<div id="end-confirm" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; z-index:50;">
+  <div class="card" style="max-width:300px; text-align:center;">
+    <p>Are you sure you want to end the call?</p>
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="btn btn-secondary btn-block" id="end-cancel">Cancel</button>
+      <button class="btn btn-danger btn-block" id="end-confirm-btn">End Call</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/call.js"></script>
+<script>initCall({ callType: 'video' });</script>
+</body>
+</html>

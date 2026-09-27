@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpeakUp — Home</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="navbar">
+  <a href="/home.html" class="logo"><img src="/assets/logo.png" alt="SpeakUp"> SpeakUp</a>
+  <nav>
+    <a href="/home.html">Home</a>
+    <a href="/premium.html">Premium</a>
+    <a href="/safety.html">Safety</a>
+    <a href="/history.html">History</a>
+    <a href="/settings.html">Profile</a>
+  </nav>
+</header>
+
+<div class="container" style="padding-top:32px;">
+  <div class="home-header">
+    <div>
+      <span class="stat-pill">🟢 <span id="online-count">—</span> online now</span>
+    </div>
+    <span class="stat-pill" id="usage-pill">Loading usage…</span>
+  </div>
+
+  <div style="text-align:center;">
+    <p style="color:#5A6B8C;">Ready when you are.</p>
+    <button class="big-call-btn" id="start-call-btn">🎥<br>Start Random Call</button>
+    <p style="color:#5A6B8C; font-size:14px;">🛡️ Be kind. Never share passwords, money, or personal contact info with strangers.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
+<script>
+requireLogin();
+
+api('/calls/usage').then(u => {
+  document.getElementById('usage-pill').textContent = u.unlimited
+    ? '⭐ Premium — unlimited calls'
+    : `${u.remaining} calls remaining today`;
+});
+
+document.getElementById('start-call-btn').addEventListener('click', () => {
+  window.location.href = '/match.html?type=video';
+});
+</script>
+</body>
+</html>

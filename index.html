@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — SpeakUp</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div style="font-weight:700; font-size:18px; margin-bottom:24px;">SpeakUp Admin</div>
+    <a href="#" class="tab active" data-tab="dashboard">Dashboard</a>
+    <a href="#" class="tab" data-tab="users">User Management</a>
+    <a href="#" class="tab" data-tab="reports">Reports</a>
+  </aside>
+  <main class="admin-main">
+
+    <section id="view-dashboard">
+      <h2>Dashboard</h2>
+      <div class="admin-stats" id="stats-grid"></div>
+    </section>
+
+    <section id="view-users" style="display:none;">
+      <h2>User Management</h2>
+      <input type="text" id="user-search" placeholder="Search by phone or name" style="max-width:320px;">
+      <table id="users-table">
+        <thead><tr><th>Name</th><th>Phone</th><th>Status</th><th>Premium</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="view-reports" style="display:none;">
+      <h2>Reports</h2>
+      <table id="reports-table">
+        <thead><tr><th>Reporter</th><th>Reported</th><th>Reason</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+requireLogin(); // admin must also be logged in as a user with role = admin (enforced server-side)
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('main > section').forEach(s => s.style.display = 'none');
+    document.getElementById('view-' + tab.dataset.tab).style.display = 'block';
+    if (tab.dataset.tab === 'users') loadUsers();
+    if (tab.dataset.tab === 'reports') loadReports();
+  });
+});
+
+async function loadDashboard() {
+  const stats = await api('/admin/dashboard');
+  const grid = document.getElementById('stats-grid');
+  const labels = {
+    totalUsers: 'Total Users', activeUsers: 'Active Users', callsToday: 'Calls Today',
+    premiumUsers: 'Premium Users', pendingReports: 'Pending Reports', bannedUsers: 'Banned Users',
+  };
+  grid.innerHTML = Object.entries(labels).map(([key, label]) =>
+    `<div class="stat-card"><div class="value">${stats[key]}</div><div>${label}</div></div>`
+  ).join('');
+}
+
+async function loadUsers(search = '') {
+  const rows = await api('/admin/users?search=' + encodeURIComponent(search));
+  const tbody = document.querySelector('#users-table tbody');
+  tbody.innerHTML = rows.map(u => `
+    <tr>
+      <td>${u.display_name || '—'}</td>
+      <td>${u.phone_number}</td>
+      <td><span class="badge ${u.status === 'active' ? 'active' : 'banned'}">${u.status}</span></td>
+      <td>${u.is_premium ? '⭐' : '—'}</td>
+      <td>${new Date(u.created_at).toLocaleDateString()}</td>
+      <td>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="suspendUser('${u.id}')">Suspend</button>
+        <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="banUser('${u.id}')">Ban</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function loadReports() {
+  const rows = await api('/admin/reports?status=pending');
+  const tbody = document.querySelector('#reports-table tbody');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.reporter_phone}</td>
+      <td>${r.reported_phone}</td>
+      <td>${r.reason}</td>
+      <td>${new Date(r.created_at).toLocaleDateString()}</td>
+      <td><span class="badge pending">${r.status}</span></td>
+      <td>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="resolveReport('${r.id}','resolved')">Resolve</button>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="resolveReport('${r.id}','dismissed')">Dismiss</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function suspendUser(id) { await api(`/admin/users/${id}/suspend`, { method: 'POST', body: {} }); loadUsers(); }
+async function banUser(id) { await api(`/admin/users/${id}/ban`, { method: 'POST', body: {} }); loadUsers(); }
+async function resolveReport(id, status) { await api(`/admin/reports/${id}/resolve`, { method: 'POST', body: { status } }); loadReports(); }
+
+document.getElementById('user-search').addEventListener('input', (e) => loadUsers(e.target.value));
+
+loadDashboard();
+</script>
+</body>
+</html>

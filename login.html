@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in — SpeakUp</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <img src="/assets/logo.png" alt="SpeakUp" style="height:40px; margin-bottom:16px;">
+
+    <!-- STEP 1: phone -->
+    <div id="step-phone">
+      <h1>Enter your number</h1>
+      <p>We'll text you a 6-digit code to verify it's you.</p>
+      <input type="tel" id="phone-input" placeholder="+91 98765 43210" autocomplete="tel">
+      <div class="error-text" id="phone-error" style="display:none;"></div>
+      <button class="btn btn-primary btn-block" id="send-otp-btn">Send Code</button>
+      <p style="font-size:13px;color:#5A6B8C;margin-top:16px;">By continuing you confirm you are 18 or older and agree to our
+        <a href="/terms.html" style="color:var(--primary);">Terms</a> and
+        <a href="/privacy.html" style="color:var(--primary);">Privacy Policy</a>.</p>
+    </div>
+
+    <!-- STEP 2: otp -->
+    <div id="step-otp" style="display:none;">
+      <h1>Enter the code</h1>
+      <p id="otp-subtitle">We sent a code to your number.</p>
+      <div class="otp-inputs">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+        <input type="text" maxlength="1" inputmode="numeric">
+      </div>
+      <div class="error-text" id="otp-error" style="display:none;"></div>
+      <button class="btn btn-primary btn-block" id="verify-otp-btn">Verify & Continue</button>
+      <span class="resend" id="resend-btn">Resend code (<span id="countdown">60</span>s)</span>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+let currentPhone = '';
+let countdownTimer = null;
+
+document.getElementById('send-otp-btn').addEventListener('click', async () => {
+  const phoneInput = document.getElementById('phone-input');
+  const errorEl = document.getElementById('phone-error');
+  errorEl.style.display = 'none';
+  const btn = document.getElementById('send-otp-btn');
+
+  try {
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    const phone = phoneInput.value.trim();
+    const data = await api('/auth/otp/send', { method: 'POST', body: { phone } });
+    currentPhone = data.phone;
+    document.getElementById('otp-subtitle').textContent = `We sent a code to ${data.phone}.`;
+    document.getElementById('step-phone').style.display = 'none';
+    document.getElementById('step-otp').style.display = 'block';
+    startCountdown(data.expiresInSeconds || 60);
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Code';
+  }
+});
+
+// auto-advance between the 6 OTP boxes
+const otpBoxes = [...document.querySelectorAll('.otp-inputs input')];
+otpBoxes.forEach((box, i) => {
+  box.addEventListener('input', () => {
+    if (box.value && otpBoxes[i + 1]) otpBoxes[i + 1].focus();
+  });
+  box.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !box.value && otpBoxes[i - 1]) otpBoxes[i - 1].focus();
+  });
+});
+
+document.getElementById('verify-otp-btn').addEventListener('click', async () => {
+  const otp = otpBoxes.map(b => b.value).join('');
+  const errorEl = document.getElementById('otp-error');
+  errorEl.style.display = 'none';
+  if (otp.length !== 6) {
+    errorEl.textContent = 'Enter all 6 digits.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  try {
+    const data = await api('/auth/otp/verify', { method: 'POST', body: { phone: currentPhone, otp } });
+    setToken(data.token);
+    window.location.href = data.isNewUser ? '/profile-setup.html' : '/home.html';
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+  }
+});
+
+function startCountdown(seconds) {
+  clearInterval(countdownTimer);
+  const resendBtn = document.getElementById('resend-btn');
+  const countdownEl = document.getElementById('countdown');
+  let remaining = seconds;
+  resendBtn.style.pointerEvents = 'none';
+  countdownTimer = setInterval(() => {
+    remaining -= 1;
+    countdownEl.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(countdownTimer);
+      resendBtn.textContent = 'Resend code';
+      resendBtn.style.pointerEvents = 'auto';
+    }
+  }, 1000);
+}
+
+document.getElementById('resend-btn').addEventListener('click', async () => {
+  if (!currentPhone) return;
+  const data = await api('/auth/otp/send', { method: 'POST', body: { phone: currentPhone } });
+  startCountdown(data.expiresInSeconds || 60);
+});
+</script>
+</body>
+</html>

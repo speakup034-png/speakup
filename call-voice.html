@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Call — SpeakUp</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="voice-call-screen">
+  <img class="voice-avatar" src="/assets/logo.png" alt="Caller avatar" id="callerAvatar">
+  <h2 id="callerName">Someone new</h2>
+  <p id="call-status">Connecting…</p>
+  <p id="call-duration" style="opacity:.8;">00:00</p>
+
+  <div style="display:flex; gap:16px; margin-top:32px;">
+    <button class="control-btn" id="mute-btn">🎤</button>
+    <button class="control-btn" id="speaker-btn">🔊</button>
+    <button class="control-btn" id="next-btn">⏭️</button>
+    <button class="control-btn danger" id="end-btn">📵</button>
+    <button class="control-btn" id="report-btn">⚠️</button>
+    <button class="control-btn" id="block-btn">🚫</button>
+  </div>
+</div>
+
+<div id="end-confirm" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; z-index:50;">
+  <div class="card" style="max-width:300px; text-align:center;">
+    <p>Are you sure you want to end the call?</p>
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button class="btn btn-secondary btn-block" id="end-cancel">Cancel</button>
+      <button class="btn btn-danger btn-block" id="end-confirm-btn">End Call</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/call.js"></script>
+<script>initCall({ callType: 'voice' });</script>
+</body>
+</html>
